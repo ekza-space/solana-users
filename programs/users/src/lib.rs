@@ -35,6 +35,10 @@ pub mod user_profiles {
 
         // Adding the user to the general list
         let users_list = &mut ctx.accounts.users_list;
+        require!(
+            users_list.users.len() < UsersList::MAX_USERS,
+            MyError::UserListFull
+        );
         users_list.users.push(ctx.accounts.user.key());
 
         Ok(())
@@ -118,7 +122,7 @@ pub struct Initialize<'info> {
         init,
         payer = user,
         space = 8 + UsersList::MAX_SIZE,
-        seeds = [USERS_LIST_SEED],
+        seeds = [USERS_LIST_SEED, crate::ID.as_ref()],
         bump,
     )]
     pub users_list: Account<'info, UsersList>,
@@ -227,4 +231,6 @@ impl UsersList {
 pub enum MyError {
     #[msg("Access denied")]
     Unauthorized,
+    #[msg("User list is full")]
+    UserListFull,
 }
