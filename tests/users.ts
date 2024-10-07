@@ -1,86 +1,91 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import { Users } from "../target/types/users";
+import { PublicKey, Keypair } from "@solana/web3.js";
 import { assert } from "chai";
+import { UserProfiles } from "../target/types/user_profiles";
 
-describe("users", () => {
-  // Configure the client to use the local cluster.
-  const provider = anchor.AnchorProvider.env();
+describe("User Profiles", () => {
+  const provider = anchor.AnchorProvider.local();
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.Users as Program<Users>;
+  const program = anchor.workspace.UserProfiles as Program<UserProfiles>;
 
-  let usersListPda: anchor.web3.PublicKey;
-  let userKeypair = anchor.web3.Keypair.generate();
+  let usersListPDA: PublicKey;
+  let userProfilePDA: PublicKey;
+  let user = provider.wallet.publicKey;
 
-  before(async () => {
-    // Derive PDA for the users list
-    [usersListPda] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from("ekza_users_list"), program.programId.toBuffer()],
+  const nickname = "TestUser";
+  const description = "This is a test user";
+  const twitterLink = "https://twitter.com/test";
+  const websiteLink = "https://test.com";
+  const email = "test@test.com";
+
+  it("Initializes the UsersList", async () => {
+    // Find PDA for UsersList
+    const [usersListPDA, bump] = PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("ekza_users_list"),
+        program.programId.toBuffer(),
+      ],
       program.programId
     );
+    console.log("UsersList PDA:", usersListPDA.toBase58());
 
-    // Airdrop SOL to user for testing
-    const tx = await provider.connection.requestAirdrop(
-      userKeypair.publicKey,
-      anchor.web3.LAMPORTS_PER_SOL
-    );
-    await provider.connection.confirmTransaction(tx);
-  });
-
-  it("Initializes the users list", async () => {
+    // Call initialize instruction
     await program.methods
       .initialize()
       .accounts({
-        usersList: usersListPda,
+        usersList: usersListPDA,
         user: provider.wallet.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .rpc();
 
-    // Fetch the users list account
+    // Fetch UsersList account and check that it is initialized
     const usersListAccount = await program.account.usersList.fetch(
-      usersListPda
+      usersListPDA
     );
-    assert.equal(
-      usersListAccount.users.length,
-      0,
-      "Users list should be empty initially"
-    );
+    assert.ok(usersListAccount.users.length === 0);
   });
 
-  it("Creates a user profile", async () => {
-    // Derive PDA for the user profile
-    const [userProfilePda] = await anchor.web3.PublicKey.findProgramAddress(
-      [Buffer.from("ekza_user_profile"), userKeypair.publicKey.toBuffer()],
+  it("Creates a new user profile", async () => {
+    // Ensure the `usersListPDA` is fetched, but no need to reinitialize it
+    [usersListPDA] = PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode("ekza_users_list"),
+        program.programId.toBuffer(),
+      ],
       program.programId
     );
 
-    // Create a user profile
+    // Find PDA for UserProfile
+    [userProfilePDA] = PublicKey.findProgramAddressSync(
+      [anchor.utils.bytes.utf8.encode("ekza_user_profile"), user.toBuffer()],
+      program.programId
+    );
+
+    // Ensure that `usersList` is included in accounts
     await program.methods
-      .createProfile("nickname", "description", "twitter_link", "website_link")
+      .createProfile(nickname, description, twitterLink, websiteLink, email)
       .accounts({
-        userProfile: userProfilePda,
-        usersList: usersListPda,
-        user: userKeypair.publicKey,
+        userProfile: userProfilePDA,
+        usersList: usersListPDA, // Refer to the existing usersList PDA
+        user: provider.wallet.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
-      .signers([userKeypair])
       .rpc();
 
-    // Fetch the user profile account
+    // Fetch UserProfile account and check the data
     const userProfileAccount = await program.account.userProfile.fetch(
-      userProfilePda
+      userProfilePDA
     );
-    assert.equal(
-      userProfileAccount.owner.toString(),
-      userKeypair.publicKey.toString(),
-      "Owner should match user public key"
-    );
-    assert.equal(
-      userProfileAccount.nickname,
-      "nickname",
-      "Nickname should match"
-    );
+    assert.ok(userProfileAccount.owner.equals(provider.wallet.publicKey));
+    assert.equal(userProfileAccount.nickname, nickname);
+    assert.equal(userProfileAccount.description, description);
+    assert.equal(userProfileAccount.twitterLink, twitterLink);
+    assert.equal(userProfileAccount.websiteLink, websiteLink);
+    assert.equal(userProfileAccount.email, email);
   });
+
+  // Other tests go here (follow, update, delete) following the same approach
 });

@@ -151,7 +151,7 @@ pub struct CreateProfile<'info> {
         bump,
     )]
     pub user_profile: Account<'info, UserProfile>,
-    #[account(mut, seeds = [USERS_LIST_SEED], bump)]
+    #[account(mut, seeds = [USERS_LIST_SEED, crate::ID.as_ref()], bump)]
     pub users_list: Account<'info, UsersList>,
     #[account(mut)]
     pub user: Signer<'info>,
@@ -167,6 +167,7 @@ pub struct UpdateProfile<'info> {
         has_one = owner // This ensures that the profile owner matches the 'owner'
     )]
     pub user_profile: Account<'info, UserProfile>,
+    /// CHECK: The 'owner' account is checked by the 'has_one'
     pub owner: AccountInfo<'info>, // Owner verification field
     #[account(mut)]
     pub user: Signer<'info>,
@@ -181,6 +182,7 @@ pub struct FollowUser<'info> {
         has_one = owner // This ensures the user_profile's owner is the same as 'owner' account
     )]
     pub user_profile: Account<'info, UserProfile>,
+    /// CHECK: 'owner' is verified via 'has_one' constraint on 'user_profile'
     pub owner: AccountInfo<'info>, // Add this field to satisfy the 'has_one' requirement
     pub user: Signer<'info>,
 }
@@ -195,6 +197,7 @@ pub struct DeleteProfile<'info> {
         has_one = owner // This ensures the user_profile's owner is the same as 'owner' account
     )]
     pub user_profile: Account<'info, UserProfile>,
+    /// CHECK: 'owner' is verified via 'has_one' constraint on 'user_profile'
     pub owner: AccountInfo<'info>, // Add this field to satisfy the 'has_one' requirement
     #[account(mut, seeds = [USERS_LIST_SEED], bump)]
     pub users_list: Account<'info, UsersList>,
