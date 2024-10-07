@@ -57,6 +57,37 @@ pub mod user_profiles {
         Ok(())
     }
 
+    pub fn update_profile(
+        ctx: Context<UpdateProfile>,
+        nickname: Option<String>, // Use Option, don't update is None
+        description: Option<String>,
+        twitter_link: Option<String>,
+        website_link: Option<String>,
+    ) -> Result<()> {
+        let profile = &mut ctx.accounts.user_profile;
+        require_keys_eq!(
+            profile.owner,
+            ctx.accounts.user.key(),
+            MyError::Unauthorized
+        );
+
+        // Update fields if they are not None
+        if let Some(new_nickname) = nickname {
+            profile.nickname = new_nickname;
+        }
+        if let Some(new_description) = description {
+            profile.description = new_description;
+        }
+        if let Some(new_twitter_link) = twitter_link {
+            profile.twitter_link = new_twitter_link;
+        }
+        if let Some(new_website_link) = website_link {
+            profile.website_link = new_website_link;
+        }
+
+        Ok(())
+    }
+
     // Deleting a user profile
     pub fn delete_profile(ctx: Context<DeleteProfile>) -> Result<()> {
         let profile = &mut ctx.accounts.user_profile;
@@ -114,6 +145,20 @@ pub struct CreateProfile<'info> {
 }
 
 #[derive(Accounts)]
+pub struct UpdateProfile<'info> {
+    #[account(
+        mut,
+        seeds = [USER_PROFILE_SEED, user.key().as_ref()],
+        bump,
+        has_one = owner // This ensures that the profile owner matches the 'owner'
+    )]
+    pub user_profile: Account<'info, UserProfile>,
+    pub owner: AccountInfo<'info>, // Owner verification field
+    #[account(mut)]
+    pub user: Signer<'info>,
+}
+
+#[derive(Accounts)]
 pub struct FollowUser<'info> {
     #[account(
         mut,
@@ -159,7 +204,7 @@ impl UserProfile {
     const MAX_DESCRIPTION_LEN: usize = 256;
     const MAX_TWITTER_LEN: usize = 64;
     const MAX_WEBSITE_LEN: usize = 64;
-    const MAX_FOLLOWING_LEN: usize = 1000; // Maximum number of follows
+    const MAX_FOLLOWING_LEN: usize = 32; // Maximum number of follows
     const MAX_SIZE: usize = 32 // owner
         + 4 + Self::MAX_NICKNAME_LEN // nickname
         + 4 + Self::MAX_DESCRIPTION_LEN // description
