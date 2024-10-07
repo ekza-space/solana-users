@@ -24,13 +24,19 @@ pub mod user_profiles {
         description: String,
         twitter_link: String,
         website_link: String,
+        email: String,
     ) -> Result<()> {
+        // Fetch the current timestamp from the Clock sysvar
+        let clock = Clock::get()?;
+
         let profile = &mut ctx.accounts.user_profile;
         profile.owner = ctx.accounts.user.key();
         profile.nickname = nickname;
         profile.description = description;
         profile.twitter_link = twitter_link;
         profile.website_link = website_link;
+        profile.email = email;
+        profile.registration_time = clock.unix_timestamp;
         profile.following = Vec::new();
 
         // Adding the user to the general list
@@ -63,10 +69,11 @@ pub mod user_profiles {
 
     pub fn update_profile(
         ctx: Context<UpdateProfile>,
-        nickname: Option<String>, // Use Option, don't update is None
+        nickname: Option<String>, // Use Option, don't update if None
         description: Option<String>,
         twitter_link: Option<String>,
         website_link: Option<String>,
+        email: Option<String>,
     ) -> Result<()> {
         let profile = &mut ctx.accounts.user_profile;
         require_keys_eq!(
@@ -87,6 +94,9 @@ pub mod user_profiles {
         }
         if let Some(new_website_link) = website_link {
             profile.website_link = new_website_link;
+        }
+        if let Some(new_email) = email {
+            profile.email = new_email;
         }
 
         Ok(())
@@ -199,6 +209,8 @@ pub struct UserProfile {
     pub description: String,
     pub twitter_link: String,
     pub website_link: String,
+    pub email: String,
+    pub registration_time: i64,
     pub following: Vec<Pubkey>, // List of addresses that the user is following
 }
 
@@ -208,12 +220,15 @@ impl UserProfile {
     const MAX_DESCRIPTION_LEN: usize = 256;
     const MAX_TWITTER_LEN: usize = 64;
     const MAX_WEBSITE_LEN: usize = 64;
+    const MAX_EMAIL_LEN: usize = 64;
     const MAX_FOLLOWING_LEN: usize = 32; // Maximum number of follows
     const MAX_SIZE: usize = 32 // owner
+        + 8 // registration_time (i64)
         + 4 + Self::MAX_NICKNAME_LEN // nickname
         + 4 + Self::MAX_DESCRIPTION_LEN // description
         + 4 + Self::MAX_TWITTER_LEN // twitter_link
         + 4 + Self::MAX_WEBSITE_LEN // website_link
+        + 4 + Self::MAX_EMAIL_LEN // email
         + 4 + (32 * Self::MAX_FOLLOWING_LEN); // following
 }
 
@@ -233,4 +248,8 @@ pub enum MyError {
     Unauthorized,
     #[msg("User list is full")]
     UserListFull,
+    #[msg("Invalid email format")]
+    InvalidEmail,
+    #[msg("Email length exceeds maximum allowed")]
+    EmailTooLong,
 }
