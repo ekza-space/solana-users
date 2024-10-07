@@ -199,7 +199,7 @@ pub struct DeleteProfile<'info> {
     pub user_profile: Account<'info, UserProfile>,
     /// CHECK: 'owner' is verified via 'has_one' constraint on 'user_profile'
     pub owner: AccountInfo<'info>, // Add this field to satisfy the 'has_one' requirement
-    #[account(mut, seeds = [USERS_LIST_SEED], bump)]
+    #[account(mut, seeds = [USERS_LIST_SEED, crate::ID.as_ref()], bump)]
     pub users_list: Account<'info, UsersList>,
     #[account(mut)]
     pub user: Signer<'info>,
