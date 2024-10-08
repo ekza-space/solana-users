@@ -19,6 +19,8 @@ describe("User Profiles", () => {
   const twitterLink = "https://twitter.com/test";
   const websiteLink = "https://test.com";
   const email = "test@test.com";
+  const pic = "QmTestProfilePic"; // Mock IPFS hash for profile picture
+  const avatar = "QmTestAvatarHash"; // Mock IPFS hash for avatar
 
   it("Initializes the UsersList", async () => {
     // Find PDA for UsersList
@@ -49,7 +51,7 @@ describe("User Profiles", () => {
   });
 
   it("Creates a new user profile", async () => {
-    // Ensure the `usersListPDA` is fetched, but no need to reinitialize it
+    // Find PDA for UsersList
     [usersListPDA] = PublicKey.findProgramAddressSync(
       [
         anchor.utils.bytes.utf8.encode("ekza_users_list"),
@@ -64,12 +66,20 @@ describe("User Profiles", () => {
       program.programId
     );
 
-    // Ensure that `usersList` is included in accounts
+    // Call createProfile with all necessary fields
     await program.methods
-      .createProfile(nickname, description, twitterLink, websiteLink, email)
+      .createProfile(
+        nickname,
+        description,
+        twitterLink,
+        websiteLink,
+        email,
+        pic,
+        avatar
+      )
       .accounts({
         userProfile: userProfilePDA,
-        usersList: usersListPDA, // Refer to the existing usersList PDA
+        usersList: usersListPDA,
         user: provider.wallet.publicKey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
@@ -85,6 +95,8 @@ describe("User Profiles", () => {
     assert.equal(userProfileAccount.twitterLink, twitterLink);
     assert.equal(userProfileAccount.websiteLink, websiteLink);
     assert.equal(userProfileAccount.email, email);
+    assert.equal(userProfileAccount.pic, pic);
+    assert.equal(userProfileAccount.avatar, avatar);
   });
 
   it("Follows another user", async () => {
@@ -115,27 +127,24 @@ describe("User Profiles", () => {
         "This is a second user",
         "",
         "",
-        "second@test.com"
+        "second@test.com",
+        "QmSecondProfilePic",
+        "QmSecondAvatarHash"
       )
       .accounts({
         userProfile: secondUserProfilePDA,
-        usersList: usersListPDA, // Refer to the existing usersList PDA
+        usersList: usersListPDA,
         user: secondUserPubkey,
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .signers([secondUser])
       .rpc();
 
-    console.log("Second user's public key:", secondUserPubkey.toBase58());
-    console.log("First user's profile PDA:", userProfilePDA.toBase58());
-    console.log("Second user's profile PDA:", secondUserProfilePDA.toBase58());
-
     // Follow second user from the first user's profile
     await program.methods
       .followUser(secondUserPubkey)
       .accounts({
-        userProfile: userProfilePDA, // First user's profile
-        usersList: usersListPDA,
+        userProfile: userProfilePDA,
         user: provider.wallet.publicKey,
       })
       .rpc();
@@ -143,10 +152,6 @@ describe("User Profiles", () => {
     // Fetch the first user's profile to check the following list
     const userProfileAccount = await program.account.userProfile.fetch(
       userProfilePDA
-    );
-    console.log(
-      "First user's following list:",
-      userProfileAccount.following.map((pk) => pk.toBase58())
     );
 
     // Check if the second user's public key is in the following list
@@ -165,15 +170,19 @@ describe("User Profiles", () => {
     const newTwitterLink = "https://twitter.com/updateduser";
     const newWebsiteLink = "https://updateduser.com";
     const newEmail = "updateduser@test.com";
+    const newPic = "QmUpdatedProfilePic"; // Updated mock IPFS hash for profile picture
+    const newAvatar = "QmUpdatedAvatar"; // Updated mock IPFS hash for avatar
 
     // Update the first user's profile with new data
     await program.methods
       .updateProfile(
-        newNickname, // Update nickname
-        newDescription, // Update description
-        newTwitterLink, // Update Twitter link
-        newWebsiteLink, // Update website link
-        newEmail // Update email
+        newNickname,
+        newDescription,
+        newTwitterLink,
+        newWebsiteLink,
+        newEmail,
+        newPic,
+        newAvatar
       )
       .accounts({
         userProfile: userProfilePDA,
@@ -192,6 +201,8 @@ describe("User Profiles", () => {
     assert.equal(updatedProfile.twitterLink, newTwitterLink);
     assert.equal(updatedProfile.websiteLink, newWebsiteLink);
     assert.equal(updatedProfile.email, newEmail);
+    assert.equal(updatedProfile.pic, newPic);
+    assert.equal(updatedProfile.avatar, newAvatar);
   });
 
   it("Deletes user profile", async () => {
@@ -221,10 +232,10 @@ describe("User Profiles", () => {
       usersListPDA
     );
     assert.ok(
-      !usersListAccount.users.includes(provider.wallet.publicKey),
+      !usersListAccount.users.some((pk) =>
+        pk.equals(provider.wallet.publicKey)
+      ),
       "User was not removed from the users list."
     );
   });
-
-  // Other tests go here following the same approach
 });

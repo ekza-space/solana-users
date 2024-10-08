@@ -25,6 +25,8 @@ pub mod user_profiles {
         twitter_link: String,
         website_link: String,
         email: String,
+        pic: String,    // field for IPFS hash
+        avatar: String, // field for IPFS hash
     ) -> Result<()> {
         // Fetch the current timestamp from the Clock sysvar
         let clock = Clock::get()?;
@@ -38,6 +40,8 @@ pub mod user_profiles {
         profile.email = email;
         profile.registration_time = clock.unix_timestamp;
         profile.following = Vec::new();
+        profile.pic = pic;
+        profile.avatar = avatar;
 
         // Adding the user to the general list
         let users_list = &mut ctx.accounts.users_list;
@@ -74,6 +78,8 @@ pub mod user_profiles {
         twitter_link: Option<String>,
         website_link: Option<String>,
         email: Option<String>,
+        pic: Option<String>,
+        avatar: Option<String>,
     ) -> Result<()> {
         let profile = &mut ctx.accounts.user_profile;
         require_keys_eq!(
@@ -97,6 +103,12 @@ pub mod user_profiles {
         }
         if let Some(new_email) = email {
             profile.email = new_email;
+        }
+        if let Some(new_pic) = pic {
+            profile.pic = new_pic;
+        }
+        if let Some(new_avatar) = avatar {
+            profile.avatar = new_avatar;
         }
 
         Ok(())
@@ -215,8 +227,9 @@ pub struct UserProfile {
     pub email: String,
     pub registration_time: i64,
     pub following: Vec<Pubkey>, // List of addresses that the user is following
+    pub pic: String,            // IPFS hash for profile picture
+    pub avatar: String,         // IPFS hash for avatar
 }
-
 impl UserProfile {
     // Maximum field sizes for calculating the account size
     const MAX_NICKNAME_LEN: usize = 32;
@@ -224,6 +237,8 @@ impl UserProfile {
     const MAX_TWITTER_LEN: usize = 64;
     const MAX_WEBSITE_LEN: usize = 64;
     const MAX_EMAIL_LEN: usize = 64;
+    const MAX_PIC_LEN: usize = 64; // Assuming IPFS hash length is 64 characters
+    const MAX_AVATAR_LEN: usize = 64; // Assuming IPFS hash length is 64 characters
     const MAX_FOLLOWING_LEN: usize = 32; // Maximum number of follows
     const MAX_SIZE: usize = 32 // owner
         + 8 // registration_time (i64)
@@ -232,6 +247,8 @@ impl UserProfile {
         + 4 + Self::MAX_TWITTER_LEN // twitter_link
         + 4 + Self::MAX_WEBSITE_LEN // website_link
         + 4 + Self::MAX_EMAIL_LEN // email
+        + 4 + Self::MAX_PIC_LEN // pic (IPFS hash)
+        + 4 + Self::MAX_AVATAR_LEN // avatar (IPFS hash)
         + 4 + (32 * Self::MAX_FOLLOWING_LEN); // following
 }
 
