@@ -6,6 +6,7 @@ import { UserProfiles } from "../target/types/user_profiles";
 
 describe("User Profiles", () => {
   const users_list = "users_list";
+  // const users_list = `users_list_${Math.random()}`;
   const user_profile = "user_profile";
 
   const provider = anchor.AnchorProvider.local();
@@ -26,7 +27,6 @@ describe("User Profiles", () => {
   const avatar = "QmTestAvatarHash"; // Mock IPFS hash for avatar
 
   it("Initializes the UsersList", async () => {
-    // Find PDA for UsersList
     const [usersListPDA, bump] = PublicKey.findProgramAddressSync(
       [
         anchor.utils.bytes.utf8.encode(users_list),
@@ -36,21 +36,29 @@ describe("User Profiles", () => {
     );
     console.log("UsersList PDA:", usersListPDA.toBase58());
 
-    // Call initialize instruction
-    await program.methods
-      .initialize()
-      .accounts({
-        usersList: usersListPDA,
-        user: provider.wallet.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      })
-      .rpc();
-
-    // Fetch UsersList account and check that it is initialized
+    // Проверим, существует ли аккаунт
     const usersListAccount = await program.account.usersList.fetch(
       usersListPDA
     );
-    assert.ok(usersListAccount.users.length === 0);
+
+    if (!usersListAccount) {
+      await program.methods
+        .initialize()
+        .accounts({
+          usersList: usersListPDA,
+          user: provider.wallet.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .rpc();
+
+      const usersList = await program.account.usersList.fetch(usersListPDA);
+      assert.ok(usersList.users.length === 0);
+      console.log("UsersList initialized");
+    } else {
+      const usersList = await program.account.usersList.fetch(usersListPDA);
+      assert.ok(usersList.users.length != 0);
+      console.log("UsersList already exists, skipping initialization.");
+    }
   });
 
   it("Creates a new user profile", async () => {
@@ -92,6 +100,8 @@ describe("User Profiles", () => {
     const userProfileAccount = await program.account.userProfile.fetch(
       userProfilePDA
     );
+    console.log("Created user profile: ", userProfileAccount);
+
     assert.ok(userProfileAccount.owner.equals(provider.wallet.publicKey));
     assert.equal(userProfileAccount.nickname, nickname);
     assert.equal(userProfileAccount.description, description);
@@ -240,5 +250,18 @@ describe("User Profiles", () => {
       ),
       "User was not removed from the users list."
     );
+  });
+
+  it("Check all users and profile", async () => {
+    const [usersListPDA, bump] = PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode(users_list),
+        program.programId.toBuffer(),
+      ],
+      program.programId
+    );
+
+    let response = await program.account.usersList.fetch(usersListPDA);
+    console.log("All registred users: ", response);
   });
 });

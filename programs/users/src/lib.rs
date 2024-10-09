@@ -132,6 +132,7 @@ pub mod user_profiles {
         }
 
         // Closing the profile account (funds are returned to the user)
+        let _ = profile.close(ctx.accounts.user.to_account_info()); // TODO: process response properly instead of using _
         Ok(())
     }
 }
