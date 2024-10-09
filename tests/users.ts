@@ -9,7 +9,8 @@ describe("User Profiles", () => {
   // const users_list = `users_list_${Math.random()}`;
   const user_profile = "user_profile";
 
-  const provider = anchor.AnchorProvider.local();
+  const provider = anchor.AnchorProvider.env();
+  console.log("provider: ", provider);
   anchor.setProvider(provider);
 
   const program = anchor.workspace.UserProfiles as Program<UserProfiles>;
@@ -27,19 +28,23 @@ describe("User Profiles", () => {
   const avatar = "QmTestAvatarHash"; // Mock IPFS hash for avatar
 
   it("Initializes the UsersList", async () => {
-    const [usersListPDA, bump] = PublicKey.findProgramAddressSync(
+    const [usersListPDAComputed, bump] = PublicKey.findProgramAddressSync(
       [
         anchor.utils.bytes.utf8.encode(users_list),
         program.programId.toBuffer(),
       ],
       program.programId
     );
+    usersListPDA = usersListPDAComputed;
     console.log("UsersList PDA:", usersListPDA.toBase58());
 
-    // Проверим, существует ли аккаунт
-    const usersListAccount = await program.account.usersList.fetch(
-      usersListPDA
-    );
+    let usersListAccount;
+    try {
+      usersListAccount = await program.account.usersList.fetch(usersListPDA);
+      console.log("usersListAccount: ", usersListAccount);
+    } catch (err) {
+      console.log("UsersList account does not exist. Initializing...");
+    }
 
     if (!usersListAccount) {
       await program.methods

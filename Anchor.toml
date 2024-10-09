@@ -7,11 +7,14 @@ skip-lint = false
 [programs.localnet]
 users = "Dpn8XGzXTGErx71SDLxuzVCDwJDKF79sE42r9qoY5Wpf"
 
+[programs.devnet]
+users = "Dpn8XGzXTGErx71SDLxuzVCDwJDKF79sE42r9qoY5Wpf"
+
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "Devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
