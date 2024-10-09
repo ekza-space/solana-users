@@ -5,6 +5,9 @@ import { assert } from "chai";
 import { UserProfiles } from "../target/types/user_profiles";
 
 describe("User Profiles", () => {
+  const users_list = "users_list";
+  const user_profile = "user_profile";
+
   const provider = anchor.AnchorProvider.local();
   anchor.setProvider(provider);
 
@@ -26,7 +29,7 @@ describe("User Profiles", () => {
     // Find PDA for UsersList
     const [usersListPDA, bump] = PublicKey.findProgramAddressSync(
       [
-        anchor.utils.bytes.utf8.encode("ekza_users_list"),
+        anchor.utils.bytes.utf8.encode(users_list),
         program.programId.toBuffer(),
       ],
       program.programId
@@ -54,7 +57,7 @@ describe("User Profiles", () => {
     // Find PDA for UsersList
     [usersListPDA] = PublicKey.findProgramAddressSync(
       [
-        anchor.utils.bytes.utf8.encode("ekza_users_list"),
+        anchor.utils.bytes.utf8.encode(users_list),
         program.programId.toBuffer(),
       ],
       program.programId
@@ -62,7 +65,7 @@ describe("User Profiles", () => {
 
     // Find PDA for UserProfile
     [userProfilePDA] = PublicKey.findProgramAddressSync(
-      [anchor.utils.bytes.utf8.encode("ekza_user_profile"), user.toBuffer()],
+      [anchor.utils.bytes.utf8.encode(user_profile), user.toBuffer()],
       program.programId
     );
 
@@ -107,7 +110,7 @@ describe("User Profiles", () => {
     // Find PDA for the second user's profile
     const [secondUserProfilePDA] = PublicKey.findProgramAddressSync(
       [
-        anchor.utils.bytes.utf8.encode("ekza_user_profile"),
+        anchor.utils.bytes.utf8.encode(user_profile),
         secondUserPubkey.toBuffer(),
       ],
       program.programId
