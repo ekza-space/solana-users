@@ -1,6 +1,6 @@
 # User Profiles Smart Contract
 
-This is a Solana-based smart contract written using the Anchor framework. It allows users to create and manage their profiles, follow other users, and store a list of all registered users. The program is designed for scalability, with plans to add more advanced features in future iterations.
+This Solana-based smart contract, built with the Anchor framework, enables users to create and manage profiles, follow others, and maintain a registry of all users. Designed for scalability, future iterations will introduce more advanced features. It serves as a foundational engine for building decentralized communities.
 
 ## Features
 
