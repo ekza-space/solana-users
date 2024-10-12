@@ -3,9 +3,10 @@
 This Solana-based smart contract, built with the Anchor framework, enables users to create and manage profiles, follow others, and maintain a registry of all users. Designed for scalability, future iterations will introduce more advanced features. It serves as a foundational engine for building decentralized communities.
 
 ### [Interact with Our 3D WebGL DApp Demo on Devnet](https://users.ekza.io/)
-<a href="https://users.ekza.io/">
-   <img src="https://i.ibb.co/XtbySvw/Screenshot-2024-10-10-at-23-28-02.png" />
-</a>
+https://github.com/user-attachments/assets/da033287-aa16-4baf-a57b-d950b1247fae
+
+
+
 
 ## Features
 
